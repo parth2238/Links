@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Link Vault</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f6f8;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .container {
+      background: #fff;
+      padding: 20px;
+      width: 100%;
+      max-width: 500px;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 10px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-size: 14px;
+    }
+
+    button {
+      width: 100%;
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      background: #007bff;
+      color: #fff;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #0056b3;
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+      margin-top: 20px;
+    }
+
+    li {
+      background: #f1f1f1;
+      padding: 10px;
+      border-radius: 8px;
+      margin-bottom: 10px;
+    }
+
+    a {
+      color: #007bff;
+      text-decoration: none;
+      font-size: 14px;
+      word-break: break-all;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔗 Link Vault</h1>
+    <input type="text" id="title" placeholder="Link title" />
+    <input type="url" id="url" placeholder="https://example.com" />
+    <button onclick="addLink()">Add Link</button>
+
+    <ul id="linkList"></ul>
+    <button onclick="deleteWithPassword()" style="margin-top:15px;background:#dc3545">Delete a Link</button>
+  </div>
+
+  <script>
+    const linkList = document.getElementById("linkList");
+    const PASSWORD = "fDfDfadsp60etup"; // password (client-side)
+
+    // Load saved links
+    let savedLinks = JSON.parse(localStorage.getItem("links")) || [];
+    savedLinks.forEach(addLinkToUI);
+
+    function addLink() {
+      const titleInput = document.getElementById("title");
+      const urlInput = document.getElementById("url");
+
+      const title = titleInput.value.trim();
+      const url = urlInput.value.trim();
+
+      if (!title || !url) {
+        alert("Enter both title and URL");
+        return;
+      }
+
+      const link = { title, url };
+      savedLinks.unshift(link);
+      localStorage.setItem("links", JSON.stringify(savedLinks));
+
+      addLinkToUI(link);
+
+      titleInput.value = "";
+      urlInput.value = "";
+    }
+
+    function addLinkToUI(link) {
+      const li = document.createElement("li");
+      li.innerHTML = `
+        <strong>${link.title}</strong><br />
+        <a href="${link.url}" target="_blank">${link.url}</a>
+      `;
+      linkList.prepend(li);
+    }
+
+    function deleteWithPassword() {
+      // create a simple password modal (masked input)
+      const overlay = document.createElement("div");
+      overlay.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;z-index:9999";
+
+      const box = document.createElement("div");
+      box.style.cssText = "background:#fff;padding:16px;border-radius:10px;width:280px;box-shadow:0 10px 25px rgba(0,0,0,.2)";
+      box.innerHTML = `
+        <h3 style="margin:0 0 10px 0">Delete Link</h3>
+        <input id="pwd" type="password" placeholder="Password" style="width:100%;padding:8px;margin-bottom:10px" />
+        <input id="idx" type="number" min="1" placeholder="Link number (1 = newest)" style="width:100%;padding:8px;margin-bottom:10px" />
+        <button id="ok" style="width:100%;background:#dc3545;color:#fff;border:none;padding:8px;border-radius:8px">Confirm Delete</button>
+      `;
+
+      overlay.appendChild(box);
+      document.body.appendChild(overlay);
+
+      box.querySelector("#ok").onclick = () => {
+        const pass = box.querySelector("#pwd").value;
+        const i = parseInt(box.querySelector("#idx").value) - 1;
+
+        if (pass !== PASSWORD) {
+          alert("Wrong password");
+          return;
+        }
+        if (isNaN(i) || i < 0 || i >= savedLinks.length) {
+          alert("Invalid link number");
+          return;
+        }
+
+        savedLinks.splice(i, 1);
+        localStorage.setItem("links", JSON.stringify(savedLinks));
+        linkList.innerHTML = "";
+        savedLinks.forEach(addLinkToUI);
+        document.body.removeChild(overlay);
+      };
+
+      overlay.onclick = (e) => {
+        if (e.target === overlay) document.body.removeChild(overlay);
+      };
+    }
+  </script>
+</body>
+</html>
